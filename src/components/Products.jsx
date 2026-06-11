@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import Modal from './Modal'
 
+const inputStyle = {
+  border: '1px solid #c4c7c7', borderRadius: 12, padding: '10px 16px',
+  fontSize: 16, color: '#191c1d', background: '#fff', width: '100%', boxSizing: 'border-box',
+  outline: 'none', transition: 'border-color 0.15s',
+}
+const primaryBtn = {
+  background: '#000', color: '#fff', padding: '10px 24px', borderRadius: 12,
+  fontSize: 14, border: 'none', cursor: 'pointer', fontWeight: 500,
+}
+
 export default function Products() {
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
@@ -13,9 +23,7 @@ export default function Products() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    fetchAll()
-  }, [])
+  useEffect(() => { fetchAll() }, [])
 
   async function fetchAll() {
     setLoading(true)
@@ -30,14 +38,11 @@ export default function Products() {
 
   function openAdd() {
     setForm({ name: '', price: '', category_id: categories[0]?.id || '' })
-    setError('')
-    setModal('add')
+    setError(''); setModal('add')
   }
-
   function openEdit(p) {
     setForm({ name: p.name, price: String(p.price), category_id: p.category_id })
-    setError('')
-    setModal(p)
+    setError(''); setModal(p)
   }
 
   async function handleSave() {
@@ -46,8 +51,7 @@ export default function Products() {
     if (!trimmedName) { setError('Product name is required'); return }
     if (isNaN(price) || price <= 0) { setError('Enter a valid price'); return }
     if (!form.category_id) { setError('Select a category'); return }
-    setSaving(true)
-    setError('')
+    setSaving(true); setError('')
     const payload = { name: trimmedName, price, category_id: form.category_id }
     if (modal === 'add') {
       const { error: err } = await supabase.from('products').insert(payload)
@@ -56,18 +60,13 @@ export default function Products() {
       const { error: err } = await supabase.from('products').update(payload).eq('id', modal.id)
       if (err) { setError('Failed to save product'); setSaving(false); return }
     }
-    setSaving(false)
-    setModal(null)
-    fetchAll()
+    setSaving(false); setModal(null); fetchAll()
   }
 
   async function handleDelete(p) {
     if (!confirm(`Delete "${p.name}"?`)) return
     const { error: err } = await supabase.from('products').delete().eq('id', p.id)
-    if (err) {
-      alert('Cannot delete — this product has sales recorded against it.')
-      return
-    }
+    if (err) { alert('Cannot delete — this product has sales recorded against it.'); return }
     fetchAll()
   }
 
@@ -80,27 +79,30 @@ export default function Products() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Products</h1>
-        <button
-          onClick={openAdd}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-        >
+        <p style={{ fontSize: 14, color: '#444748' }}>{filtered.length} products</p>
+        <button onClick={openAdd} style={primaryBtn}
+          onMouseEnter={e => e.currentTarget.style.background = '#1c1b1b'}
+          onMouseLeave={e => e.currentTarget.style.background = '#000'}>
           + Add Product
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           type="text"
           placeholder="Search products…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          style={{ ...inputStyle, flex: 1 }}
+          onFocus={e => e.target.style.borderColor = '#000'}
+          onBlur={e => e.target.style.borderColor = '#c4c7c7'}
         />
         <select
           value={filterCat}
           onChange={e => setFilterCat(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+          style={{ ...inputStyle, flex: 'none', width: 'auto', minWidth: 180 }}
+          onFocus={e => e.target.style.borderColor = '#000'}
+          onBlur={e => e.target.style.borderColor = '#c4c7c7'}
         >
           <option value="">All Categories</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -108,39 +110,48 @@ export default function Products() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-gray-400">Loading…</div>
+        <div className="text-center py-16" style={{ color: '#444748', fontSize: 14 }}>Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">No products found.</div>
+        <div className="text-center py-16" style={{ color: '#444748', fontSize: 14 }}>No products found.</div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-200">
+        <div className="rounded-xl overflow-hidden border" style={{ background: '#fff', borderColor: '#c4c7c7', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' }}>
+          <table className="w-full">
+            <thead style={{ background: '#f3f4f5', borderBottom: '1px solid #c4c7c7' }}>
               <tr>
-                <th className="text-left px-4 py-3 text-gray-600 font-semibold">Product</th>
-                <th className="text-left px-4 py-3 text-gray-600 font-semibold hidden sm:table-cell">Category</th>
-                <th className="text-right px-4 py-3 text-gray-600 font-semibold">Price (GHS)</th>
-                <th className="px-4 py-3"></th>
+                {['Product', 'Category', 'Price (GHS)', ''].map((h, i) => (
+                  <th key={i}
+                    className={`text-left px-5 py-3.5 ${i === 1 ? 'hidden sm:table-cell' : ''} ${i === 2 ? 'text-right' : ''}`}
+                    style={{ fontSize: 11, color: '#444748', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {filtered.map(p => (
-                <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-800 font-medium">{p.name}</td>
-                  <td className="px-4 py-3 text-gray-500 hidden sm:table-cell">{p.categories?.name}</td>
-                  <td className="px-4 py-3 text-right text-gray-800">
+            <tbody>
+              {filtered.map((p, idx) => (
+                <tr key={p.id}
+                  style={{ borderTop: idx > 0 ? '1px solid rgba(196,199,199,0.35)' : 'none' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f3f4f5'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                  <td className="px-5 py-3.5" style={{ fontSize: 14, fontWeight: 500, color: '#191c1d' }}>{p.name}</td>
+                  <td className="px-5 py-3.5 hidden sm:table-cell">
+                    <span className="inline-block px-2.5 py-1 rounded-full"
+                      style={{ background: '#e8def8', color: '#686177', fontSize: 11, fontWeight: 500 }}>
+                      {p.categories?.name}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 text-right" style={{ fontSize: 14, fontWeight: 600, color: '#191c1d' }}>
                     {Number(p.price).toFixed(2)}
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => openEdit(p)}
-                      className="text-blue-600 hover:text-blue-800 font-medium mr-3"
-                    >
+                  <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                    <button onClick={() => openEdit(p)}
+                      style={{ fontSize: 12, color: '#444748', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, marginRight: 12 }}
+                      onMouseEnter={e => e.currentTarget.style.color = '#191c1d'}
+                      onMouseLeave={e => e.currentTarget.style.color = '#444748'}>
                       Edit
                     </button>
-                    <button
-                      onClick={() => handleDelete(p)}
-                      className="text-red-500 hover:text-red-700 font-medium"
-                    >
+                    <button onClick={() => handleDelete(p)}
+                      style={{ fontSize: 12, color: '#ba1a1a', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
                       Delete
                     </button>
                   </td>
@@ -148,62 +159,57 @@ export default function Products() {
               ))}
             </tbody>
           </table>
-          <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
-            {filtered.length} product{filtered.length !== 1 ? 's' : ''}
-          </div>
         </div>
       )}
 
       {modal && (
-        <Modal
-          title={modal === 'add' ? 'Add Product' : 'Edit Product'}
-          onClose={() => setModal(null)}
-        >
-          <div className="space-y-4">
+        <Modal title={modal === 'add' ? 'Add Product' : 'Edit Product'} onClose={() => setModal(null)}>
+          <div className="space-y-5">
+            {[
+              { label: 'Product Name', key: 'name', type: 'text', placeholder: 'e.g. Birthday cards' },
+              { label: 'Selling Price (GHS)', key: 'price', type: 'number', placeholder: '0.00' },
+            ].map(({ label, key, type, placeholder }) => (
+              <div key={key}>
+                <label style={{ display: 'block', fontSize: 12, color: '#444748', marginBottom: 6, fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                  {label}
+                </label>
+                <input
+                  type={type}
+                  value={form[key]}
+                  onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => e.target.style.borderColor = '#000'}
+                  onBlur={e => e.target.style.borderColor = '#c4c7c7'}
+                  placeholder={placeholder}
+                  autoFocus={key === 'name'}
+                  min={key === 'price' ? 0 : undefined}
+                  step={key === 'price' ? '0.01' : undefined}
+                />
+              </div>
+            ))}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="e.g. Birthday cards"
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+              <label style={{ display: 'block', fontSize: 12, color: '#444748', marginBottom: 6, fontWeight: 500, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                Category
+              </label>
               <select
                 value={form.category_id}
                 onChange={e => setForm(f => ({ ...f, category_id: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white"
+                style={inputStyle}
+                onFocus={e => e.target.style.borderColor = '#000'}
+                onBlur={e => e.target.style.borderColor = '#c4c7c7'}
               >
                 <option value="">Select category…</option>
                 {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (GHS)</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.price}
-                onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                placeholder="0.00"
-              />
-            </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {error && <p style={{ color: '#ba1a1a', fontSize: 12 }}>{error}</p>}
             <div className="flex gap-3 justify-end">
-              <button onClick={() => setModal(null)} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium">
+              <button onClick={() => setModal(null)}
+                style={{ padding: '10px 16px', fontSize: 14, color: '#444748', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500 }}>
                 Cancel
               </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg font-medium disabled:opacity-50 transition-colors"
-              >
+              <button onClick={handleSave} disabled={saving}
+                style={{ ...primaryBtn, opacity: saving ? 0.4 : 1 }}>
                 {saving ? 'Saving…' : 'Save'}
               </button>
             </div>

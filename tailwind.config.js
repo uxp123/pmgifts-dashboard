@@ -1,9 +1,60 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  safelist: [
+    'bg-primary', 'text-on-primary', 'hover:bg-primary-container',
+    'bg-secondary-container', 'text-on-secondary-container',
+    'bg-tertiary-fixed', 'bg-honey',
+    'bg-surface-container-lowest', 'bg-surface-container-low',
+    'bg-surface-container', 'bg-surface-container-high', 'bg-surface-container-highest',
+    'text-on-surface', 'text-on-surface-variant', 'text-secondary', 'text-error',
+    'border-outline-variant', 'border-outline',
+    'shadow-card', 'shadow-card-hover', 'shadow-modal',
+    'focus:border-primary', 'focus:ring-primary/20',
+  ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
+      colors: {
+        surface: '#f8f9fa',
+        'surface-dim': '#d9dadb',
+        'surface-container-lowest': '#ffffff',
+        'surface-container-low': '#f3f4f5',
+        'surface-container': '#edeeef',
+        'surface-container-high': '#e7e8e9',
+        'surface-container-highest': '#e1e3e4',
+        'on-surface': '#191c1d',
+        'on-surface-variant': '#444748',
+        outline: '#747878',
+        'outline-variant': '#c4c7c7',
+        primary: '#000000',
+        'on-primary': '#ffffff',
+        'primary-container': '#1c1b1b',
+        'on-primary-container': '#858383',
+        secondary: '#625b71',
+        'secondary-container': '#e8def8',
+        'on-secondary-container': '#686177',
+        'tertiary-fixed': '#d7e6dd',
+        honey: '#f9f4da',
+        error: '#ba1a1a',
+        'error-container': '#ffdad6',
+      },
+      borderRadius: {
+        sm: '0.25rem',
+        DEFAULT: '0.5rem',
+        md: '0.75rem',
+        lg: '1rem',
+        xl: '1.5rem',
+        full: '9999px',
+      },
+      boxShadow: {
+        card: '0 4px 20px rgba(0,0,0,0.04)',
+        'card-hover': '0 8px 28px rgba(0,0,0,0.08)',
+        modal: '0 16px 48px rgba(0,0,0,0.14)',
+      },
+    },
   },
   plugins: [],
 }
-
