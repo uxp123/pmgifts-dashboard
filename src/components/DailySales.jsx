@@ -33,7 +33,12 @@ export default function DailySales() {
   async function handleDelete(id) {
     if (!confirm('Delete this sale record?')) return
     setDeleting(id)
+    const sale = sales.find(s => s.id === id)
     await supabase.from('sales').delete().eq('id', id)
+    if (sale) {
+      const { data: product } = await supabase.from('products').select('quantity').eq('id', sale.product_id).single()
+      if (product) await supabase.from('products').update({ quantity: (product.quantity ?? 0) + sale.quantity }).eq('id', sale.product_id)
+    }
     setDeleting(null)
     fetchSales()
   }

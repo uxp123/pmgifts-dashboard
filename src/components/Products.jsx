@@ -28,6 +28,7 @@ export default function Products() {
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
   const [filterCat, setFilterCat] = useState('')
+  const [filterStock, setFilterStock] = useState('all')
   const [search, setSearch] = useState('')
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({ name: '', price: '', quantity: '', category_id: '' })
@@ -84,9 +85,11 @@ export default function Products() {
   }
 
   const filtered = products.filter(p => {
-    const matchCat = !filterCat || p.category_id === filterCat
+    const matchCat    = !filterCat || p.category_id === filterCat
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase())
-    return matchCat && matchSearch
+    const qty = p.quantity ?? 0
+    const matchStock  = filterStock === 'all' || (filterStock === 'out' && qty === 0) || (filterStock === 'low' && qty > 0 && qty <= 5)
+    return matchCat && matchSearch && matchStock
   })
 
   const outOfStock = filtered.filter(p => (p.quantity ?? 0) === 0).length
@@ -110,6 +113,30 @@ export default function Products() {
           onMouseLeave={e => e.currentTarget.style.background = '#000'}>
           + Add Product
         </button>
+      </div>
+
+      {/* Stock filter pills */}
+      <div className="flex gap-2 mb-4 flex-wrap">
+        {[
+          { id: 'all', label: 'All' },
+          { id: 'out', label: `Out of stock (${products.filter(p => (p.quantity ?? 0) === 0).length})` },
+          { id: 'low', label: `Low stock (${products.filter(p => (p.quantity ?? 0) > 0 && (p.quantity ?? 0) <= 5).length})` },
+        ].map(({ id, label }) => {
+          const active = filterStock === id
+          const isOut = id === 'out'
+          const isLow = id === 'low'
+          return (
+            <button key={id} onClick={() => setFilterStock(id)}
+              style={{
+                padding: '6px 14px', borderRadius: 99, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '1px solid',
+                background: active ? (isOut ? '#ba1a1a' : isLow ? '#5c4d1a' : '#191c1d') : '#fff',
+                color: active ? '#fff' : (isOut ? '#ba1a1a' : isLow ? '#5c4d1a' : '#444748'),
+                borderColor: active ? 'transparent' : (isOut ? '#ffdad6' : isLow ? '#f9f4da' : '#c4c7c7'),
+              }}>
+              {label}
+            </button>
+          )
+        })}
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 mb-6">

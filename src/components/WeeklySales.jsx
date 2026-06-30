@@ -29,13 +29,19 @@ export default function WeeklySales() {
       .from('sales').select('*, products(name, categories(name))')
       .gte('sale_date', isoDate(weekStart)).lte('sale_date', isoDate(weekEnd))
       .order('sale_date', { ascending: false }).order('created_at', { ascending: false })
+
     setSales(data || []); setLoading(false)
   }
 
   async function handleDelete(id) {
     if (!confirm('Delete this sale record?')) return
     setDeleting(id)
+    const sale = sales.find(s => s.id === id)
     await supabase.from('sales').delete().eq('id', id)
+    if (sale) {
+      const { data: product } = await supabase.from('products').select('quantity').eq('id', sale.product_id).single()
+      if (product) await supabase.from('products').update({ quantity: (product.quantity ?? 0) + sale.quantity }).eq('id', sale.product_id)
+    }
     setDeleting(null); fetchSales()
   }
 
@@ -45,8 +51,9 @@ export default function WeeklySales() {
     const rows = sales.map(s => ({
       Date: s.sale_date, Product: s.products?.name, Category: s.products?.categories?.name,
       Qty: s.quantity, 'Unit Price (GHS)': Number(s.unit_price).toFixed(2), 'Total (GHS)': Number(s.total).toFixed(2),
+      'Payment Method': s.payment_method || 'Cash', Notes: s.notes || '',
     }))
-    rows.push({ Date: '', Product: 'WEEK TOTAL', Category: '', Qty: '', 'Unit Price (GHS)': '', 'Total (GHS)': total.toFixed(2) })
+    rows.push({ Date: '', Product: 'WEEK TOTAL', Category: '', Qty: '', 'Unit Price (GHS)': '', 'Total (GHS)': total.toFixed(2), 'Payment Method': '', Notes: '' })
     const ws = XLSX.utils.json_to_sheet(rows); const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Sales')
     XLSX.writeFile(wb, `sales_${isoDate(weekStart)}_to_${isoDate(weekEnd)}.csv`)
@@ -56,10 +63,11 @@ export default function WeeklySales() {
     const rows = sales.map(s => ({
       Date: s.sale_date, Product: s.products?.name, Category: s.products?.categories?.name,
       Qty: s.quantity, 'Unit Price (GHS)': Number(s.unit_price), 'Total (GHS)': Number(s.total),
+      'Payment Method': s.payment_method || 'Cash', Notes: s.notes || '',
     }))
-    rows.push({ Date: '', Product: 'WEEK TOTAL', Category: '', Qty: '', 'Unit Price (GHS)': '', 'Total (GHS)': total })
+    rows.push({ Date: '', Product: 'WEEK TOTAL', Category: '', Qty: '', 'Unit Price (GHS)': '', 'Total (GHS)': total, 'Payment Method': '', Notes: '' })
     const ws = XLSX.utils.json_to_sheet(rows)
-    ws['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 6 }, { wch: 16 }, { wch: 14 }]
+    ws['!cols'] = [{ wch: 12 }, { wch: 30 }, { wch: 25 }, { wch: 6 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 30 }]
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb, ws, 'Weekly Sales')
     XLSX.writeFile(wb, `sales_${isoDate(weekStart)}_to_${isoDate(weekEnd)}.xlsx`)
@@ -133,6 +141,7 @@ export default function WeeklySales() {
                   { label: 'Date', cls: '' },
                   { label: 'Product', cls: '' },
                   { label: 'Category', cls: 'hidden md:table-cell' },
+                  { label: 'Payment', cls: 'hidden md:table-cell' },
                   { label: 'Qty', cls: 'text-right' },
                   { label: 'Unit', cls: 'text-right hidden sm:table-cell' },
                   { label: 'Total (GHS)', cls: 'text-right' },
@@ -157,6 +166,16 @@ export default function WeeklySales() {
                     <span className="inline-block px-2.5 py-1 rounded-full"
                       style={{ background: '#edeeef', color: '#444748', fontSize: 11, fontWeight: 500 }}>
                       {s.products?.categories?.name}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3.5 hidden md:table-cell">
+                    <span className="inline-block px-2.5 py-1 rounded-full"
+                      style={{
+                        fontSize: 11, fontWeight: 500,
+                        background: s.payment_method === 'Momo' ? '#f9f4da' : s.payment_method === 'Debit/Credit Card' ? '#e8def8' : '#d7e6dd',
+                        color: s.payment_method === 'Momo' ? '#5c4d1a' : s.payment_method === 'Debit/Credit Card' ? '#686177' : '#3c4a43',
+                      }}>
+                      {s.payment_method || 'Cash'}
                     </span>
                   </td>
                   <td className="px-5 py-3.5 text-right" style={{ fontSize: 14, color: '#191c1d' }}>{s.quantity}</td>
